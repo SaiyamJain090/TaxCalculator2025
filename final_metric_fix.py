@@ -6,7 +6,7 @@ import streamlit as st
 st.set_page_config(page_title="Income Tax Calculator", layout="wide")
 
 # ------------------------------------------------------------------------------
-# DEFINE NAVIGATION OPTIONS & INITIALIZE CURRENT SECTION (using session state)
+# DEFINE NAVIGATION OPTIONS & INITIALIZE CURRENT SECTION
 # ------------------------------------------------------------------------------
 nav_options = ["Salary Details", "Exemptions (Old Scheme)", "Results"]
 
@@ -146,7 +146,7 @@ if st.session_state.current_section == "Salary Details":
     if st.session_state.get("salary_saved", False):
         if st.button("Next"):
             st.session_state.current_section = "Exemptions (Old Scheme)"
-            st.experimental_rerun()
+            st.stop()  # Stop the current run; the next run will reflect the updated section.
     
     st.markdown("</div>", unsafe_allow_html=True)
     st.stop()
@@ -184,7 +184,7 @@ if st.session_state.current_section == "Exemptions (Old Scheme)":
     if st.session_state.get("exemptions_saved", False):
         if st.button("Next"):
             st.session_state.current_section = "Results"
-            st.experimental_rerun()
+            st.stop()
     
     st.markdown("</div>", unsafe_allow_html=True)
     st.stop()
@@ -196,6 +196,7 @@ if st.session_state.current_section == "Results":
     st.markdown("<div class='section'>", unsafe_allow_html=True)
     st.header("Section 3: Tax Calculation and Scheme Comparison")
     
+    # Ensure that Salary Details have been saved.
     if "total_income" not in st.session_state or "basic_salary" not in st.session_state:
         st.warning("Please fill in the Salary Details first!")
         st.stop()
