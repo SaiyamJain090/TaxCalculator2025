@@ -1,6 +1,15 @@
 import streamlit as st
 
 # ------------------------------------------------------------------------------
+# HELPER FUNCTION FOR SAFE RERUN
+# ------------------------------------------------------------------------------
+def safe_rerun():
+    try:
+        st.experimental_rerun()
+    except Exception:
+        pass
+
+# ------------------------------------------------------------------------------
 # INITIAL SETUP & SIDEBAR NAVIGATION CONTROL
 # ------------------------------------------------------------------------------
 if "current_section" not in st.session_state:
@@ -9,14 +18,14 @@ if "current_section" not in st.session_state:
 nav_options = ["Salary Details", "Exemptions (Old Scheme)", "Results"]
 default_index = nav_options.index(st.session_state.current_section)
 
-# The sidebar radio is used only for manual navigation.
+# The sidebar radio is used for manual navigation.
 nav = st.sidebar.radio(
     "Select Section", 
     options=nav_options,
     index=default_index,
     key="nav_radio"
 )
-# If the user manually selects a different section, update our control variable.
+# Update our control variable if the user manually changes it.
 if nav != st.session_state.current_section:
     st.session_state.current_section = nav
 
@@ -137,9 +146,9 @@ if st.session_state.current_section == "Salary Details":
             st.success("Salary details saved!")
             # Advance automatically to the next section.
             st.session_state.current_section = "Exemptions (Old Scheme)"
-            st.experimental_rerun()
+            safe_rerun()
     st.markdown("</div>", unsafe_allow_html=True)
-    st.stop()  # Show only one section at a time.
+    st.stop()  # Ensure only one section is displayed at a time.
 
 # ------------------------------------------------------------------------------
 # SECTION 2: EXEMPTIONS FOR OLD TAX SCHEME
@@ -170,7 +179,7 @@ if st.session_state.current_section == "Exemptions (Old Scheme)":
             st.success("Exemptions saved!")
             # Advance automatically to the Results section.
             st.session_state.current_section = "Results"
-            st.experimental_rerun()
+            safe_rerun()
     st.markdown("</div>", unsafe_allow_html=True)
     st.stop()
 
@@ -235,4 +244,12 @@ if st.session_state.current_section == "Results":
     elif new_tax < old_tax:
         better = "New Tax Scheme"
     else:
-        b
+        better = "Both schemes yield the same tax liability"
+    
+    st.markdown(f"""
+    <div class="result-card">
+      <h2>Better Scheme: {better}</h2>
+      <p>Based on your inputs, the <strong>{better}</strong> offers a lower tax liability.</p>
+    </div>
+    """, unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
