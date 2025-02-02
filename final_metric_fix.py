@@ -1,25 +1,38 @@
 import streamlit as st
 
 # ------------------------------------------------------------------------------
-# PAGE CONFIG & CUSTOM CSS
+# INITIAL SETUP & SIDEBAR NAVIGATION
 # ------------------------------------------------------------------------------
-st.set_page_config(page_title="Income Tax Calculator", layout="wide")
+if "nav_section" not in st.session_state:
+    st.session_state.nav_section = "Salary Details"
+
+st.sidebar.title("Navigation")
+nav = st.sidebar.radio("Select Section", 
+                       options=["Salary Details", "Exemptions (Old Scheme)", "Results"],
+                       key="nav_section")
+
+# ------------------------------------------------------------------------------
+# CUSTOM CSS: Black background, white text, and styled sections
+# ------------------------------------------------------------------------------
 st.markdown("""
     <style>
+    .stApp {
+        background-color: #000000;
+    }
     body {
-        background-color: #f5f5f5;
-        color: #003366;
+        background-color: #000000;
+        color: #ffffff;
         font-family: 'Helvetica', sans-serif;
     }
-    h1, h2, h3, h4, label, p {
-        color: #003366 !important;
+    h1, h2, h3, h4, label, p, .css-1d391kg {
+        color: #ffffff !important;
     }
     .section {
-        background-color: #ffffff;
+        background-color: #1a1a1a;
         padding: 20px;
         border-radius: 8px;
         margin: 20px 0;
-        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+        box-shadow: 0px 4px 8px rgba(255, 255, 255, 0.1);
     }
     .stButton>button {
         background-color: #0056b3;
@@ -65,31 +78,20 @@ def calculate_tax(income, slabs):
     return tax
 
 # ------------------------------------------------------------------------------
-# USE TABS TO ORGANIZE THE APP INTO SECTIONS
+# SECTION 1: SALARY DETAILS
 # ------------------------------------------------------------------------------
-tab1, tab2, tab3 = st.tabs(["Salary Details", "Exemptions (Old Scheme)", "Results"])
-
-# ------------------------------------------------------------------------------
-# TAB 1: SALARY DETAILS
-# ------------------------------------------------------------------------------
-with tab1:
+if nav == "Salary Details":
     st.markdown("<div class='section'>", unsafe_allow_html=True)
     st.header("Section 1: Salary Details")
-    st.subheader("Enter your salary details:")
+    st.subheader("Enter your salary details below:")
     
-    with st.form("salary_form"):
-        col1, col2 = st.columns(2)
-        with col1:
-            annual_ctc = st.number_input("Total Annual CTC (₹)", min_value=0, value=600000, step=10000)
-            bonus = st.number_input("Total Bonus (₹)", min_value=0, value=0, step=1000)
-        with col2:
-            st.markdown("**Total Income:**")
-            # (This is just for display. We'll compute total income below.)
-        
+    with st.form(key="salary_form"):
+        annual_ctc = st.number_input("Total Annual CTC (₹)", min_value=0, value=600000, step=10000)
+        bonus = st.number_input("Total Bonus (₹)", min_value=0, value=0, step=1000)
         total_income = annual_ctc + bonus
-        st.write(f"Your **Total Income** is: ₹{total_income:,.0f}")
+        st.write(f"**Total Income:** ₹{total_income:,.0f}")
         
-        basic_mode = st.radio("How would you like to enter Basic Salary?", 
+        basic_mode = st.radio("How would you like to enter Basic Salary?",
                               ("Enter Amount", "Percentage of Total Annual CTC"))
         if basic_mode == "Enter Amount":
             basic_salary = st.number_input("Basic Salary (₹)", min_value=0, value=int(0.3 * total_income), step=1000)
@@ -98,7 +100,7 @@ with tab1:
             basic_salary = total_income * basic_pct / 100
         st.write(f"**Basic Salary:** ₹{basic_salary:,.0f}")
         
-        hra_mode = st.radio("How would you like to enter HRA Received?", 
+        hra_mode = st.radio("How would you like to enter HRA Received?",
                             ("Enter Amount (Annual)", "Percentage of Basic Salary"))
         if hra_mode == "Enter Amount (Annual)":
             hra_received = st.number_input("HRA Received (₹, Annual)", min_value=0, value=int(0.5 * basic_salary), step=1000)
@@ -115,26 +117,26 @@ with tab1:
             st.session_state["basic_salary"] = basic_salary
             st.session_state["hra_received"] = hra_received
             st.success("Salary details saved!")
+            # Move automatically to the next section
+            st.session_state.nav_section = "Exemptions (Old Scheme)"
     st.markdown("</div>", unsafe_allow_html=True)
+    st.stop()  # Stop here so that only one section shows at a time
 
 # ------------------------------------------------------------------------------
-# TAB 2: EXEMPTIONS FOR OLD TAX SCHEME
+# SECTION 2: EXEMPTIONS FOR OLD TAX SCHEME
 # ------------------------------------------------------------------------------
-with tab2:
+if nav == "Exemptions (Old Scheme)":
     st.markdown("<div class='section'>", unsafe_allow_html=True)
     st.header("Section 2: Exemptions for Old Tax Scheme")
     st.markdown("*These inputs apply only for the Old Tax Scheme calculation.*")
     
-    with st.form("exemptions_form"):
-        col1, col2 = st.columns(2)
-        with col1:
-            monthly_rent = st.number_input("Monthly Rent Paid (₹)", min_value=0, value=0, step=500)
-            city_type = st.selectbox("City Type", ("Metro", "Non-Metro"))
-            sec80c = st.number_input("Section 80C Deduction (₹)", min_value=0, value=150000, step=1000)
-        with col2:
-            home_loan = st.number_input("Home Loan Interest Deduction (₹)", min_value=0, value=0, step=1000)
-            nps = st.number_input("NPS Deduction (₹)", min_value=0, value=0, step=1000)
-            vol_pf = st.number_input("Voluntary PF Deduction (₹)", min_value=0, value=0, step=1000)
+    with st.form(key="exemptions_form"):
+        monthly_rent = st.number_input("Monthly Rent Paid (₹)", min_value=0, value=0, step=500)
+        city_type = st.selectbox("City Type", ("Metro", "Non-Metro"))
+        sec80c = st.number_input("Section 80C Deduction (₹)", min_value=0, value=150000, step=1000)
+        home_loan = st.number_input("Home Loan Interest Deduction (₹)", min_value=0, value=0, step=1000)
+        nps = st.number_input("NPS Deduction (₹)", min_value=0, value=0, step=1000)
+        vol_pf = st.number_input("Voluntary PF Deduction (₹)", min_value=0, value=0, step=1000)
         other_deductions = st.number_input("Other Deductions (₹)", min_value=0, value=0, step=1000)
         
         submitted_exemptions = st.form_submit_button("Save Exemptions")
@@ -147,72 +149,73 @@ with tab2:
             st.session_state["vol_pf"] = vol_pf
             st.session_state["other_deductions"] = other_deductions
             st.success("Exemptions saved!")
+            # Move automatically to the Results section
+            st.session_state.nav_section = "Results"
     st.markdown("</div>", unsafe_allow_html=True)
+    st.stop()
 
 # ------------------------------------------------------------------------------
-# TAB 3: RESULTS – CALCULATE AND COMPARE TAX SCHEMES
+# SECTION 3: RESULTS – TAX CALCULATION & SCHEME COMPARISON
 # ------------------------------------------------------------------------------
-with tab3:
+if nav == "Results":
     st.markdown("<div class='section'>", unsafe_allow_html=True)
     st.header("Section 3: Tax Calculation and Scheme Comparison")
     
-    # Ensure salary details have been saved.
+    # Ensure that Salary Details have been saved.
     if "total_income" not in st.session_state or "basic_salary" not in st.session_state:
-        st.warning("Please fill in the Salary Details (Tab 1) first.")
+        st.warning("Please fill in the Salary Details first!")
+        st.stop()
+        
+    total_income = st.session_state["total_income"]
+    basic_salary = st.session_state["basic_salary"]
+    hra_received = st.session_state["hra_received"]
+    
+    # --- OLD TAX SCHEME CALCULATION ---
+    monthly_rent = st.session_state.get("monthly_rent", 0)
+    city_type = st.session_state.get("city_type", "Metro")
+    annual_rent = monthly_rent * 12
+    excess_rent = max(annual_rent - (0.1 * basic_salary), 0)
+    city_limit = 0.5 * basic_salary if city_type == "Metro" else 0.4 * basic_salary
+    hra_exemption = min(hra_received, excess_rent, city_limit)
+    
+    sec80c = st.session_state.get("sec80c", 0)
+    home_loan = st.session_state.get("home_loan", 0)
+    nps = st.session_state.get("nps", 0)
+    vol_pf = st.session_state.get("vol_pf", 0)
+    other_deductions = st.session_state.get("other_deductions", 0)
+    other_total = sec80c + home_loan + nps + vol_pf + other_deductions
+    
+    total_deductions_old = STANDARD_DEDUCTION_OLD + hra_exemption + other_total
+    taxable_income_old = max(total_income - total_deductions_old, 0)
+    old_tax = calculate_tax(taxable_income_old, OLD_TAX_SLABS)
+    
+    # --- NEW TAX SCHEME CALCULATION ---
+    # If total income is below ₹12.75 LPA then effective tax is 0.
+    if total_income < 1275000:
+        new_tax = 0
+        taxable_income_new = total_income
     else:
-        total_income = st.session_state["total_income"]
-        basic_salary = st.session_state["basic_salary"]
-        hra_received = st.session_state["hra_received"]
-        
-        # --- OLD TAX SCHEME CALCULATION ---
-        # HRA Exemption Calculation:
-        monthly_rent = st.session_state.get("monthly_rent", 0)
-        city_type = st.session_state.get("city_type", "Metro")
-        annual_rent = monthly_rent * 12
-        excess_rent = max(annual_rent - (0.1 * basic_salary), 0)
-        city_limit = 0.5 * basic_salary if city_type == "Metro" else 0.4 * basic_salary
-        hra_exemption = min(hra_received, excess_rent, city_limit)
-        
-        # Other deductions for Old Scheme:
-        sec80c = st.session_state.get("sec80c", 0)
-        home_loan = st.session_state.get("home_loan", 0)
-        nps = st.session_state.get("nps", 0)
-        vol_pf = st.session_state.get("vol_pf", 0)
-        other_deductions = st.session_state.get("other_deductions", 0)
-        other_total = sec80c + home_loan + nps + vol_pf + other_deductions
-        
-        total_deductions_old = STANDARD_DEDUCTION_OLD + hra_exemption + other_total
-        taxable_income_old = max(total_income - total_deductions_old, 0)
-        old_tax = calculate_tax(taxable_income_old, OLD_TAX_SLABS)
-        
-        # --- NEW TAX SCHEME CALCULATION ---
-        # If total income is below ₹12.75 LPA, then tax is 0.
-        if total_income < 1275000:
-            new_tax = 0
-            taxable_income_new = total_income
-        else:
-            taxable_income_new = max(total_income - STANDARD_DEDUCTION_NEW, 0)
-            new_tax = calculate_tax(taxable_income_new, NEW_TAX_SLABS)
-        
-        # --- DISPLAY RESULTS ---
-        st.subheader("Your Tax Calculation Summary")
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown("#### Old Tax Scheme")
-            st.write(f"**Taxable Income:** ₹{taxable_income_old:,.0f}")
-            st.write(f"**Tax Liability:** ₹{old_tax:,.0f}")
-        with col2:
-            st.markdown("#### New Tax Scheme")
-            st.write(f"**Taxable Income:** ₹{taxable_income_new:,.0f}")
-            st.write(f"**Tax Liability:** ₹{new_tax:,.0f}")
-        
-        # Compare which scheme is better
-        if old_tax < new_tax:
-            better = "Old Tax Scheme"
-        elif new_tax < old_tax:
-            better = "New Tax Scheme"
-        else:
-            better = "Both schemes yield the same tax liability"
-            
-        st.markdown(f"### **Better Scheme:** {better}")
+        taxable_income_new = max(total_income - STANDARD_DEDUCTION_NEW, 0)
+        new_tax = calculate_tax(taxable_income_new, NEW_TAX_SLABS)
+    
+    # --- DISPLAY RESULTS ---
+    st.subheader("Your Tax Calculation Summary")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("#### Old Tax Scheme")
+        st.write(f"**Taxable Income:** ₹{taxable_income_old:,.0f}")
+        st.write(f"**Tax Liability:** ₹{old_tax:,.0f}")
+    with col2:
+        st.markdown("#### New Tax Scheme")
+        st.write(f"**Taxable Income:** ₹{taxable_income_new:,.0f}")
+        st.write(f"**Tax Liability:** ₹{new_tax:,.0f}")
+    
+    if old_tax < new_tax:
+        better = "Old Tax Scheme"
+    elif new_tax < old_tax:
+        better = "New Tax Scheme"
+    else:
+        better = "Both schemes yield the same tax liability"
+    
+    st.markdown(f"### **Better Scheme:** {better}")
     st.markdown("</div>", unsafe_allow_html=True)
