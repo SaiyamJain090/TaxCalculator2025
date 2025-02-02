@@ -33,6 +33,16 @@ def calculate_tax(income, slabs):
             break
     return tax
 
+# -----------------------------------------------------------------------------
+# Helper function to rerun the app safely
+# -----------------------------------------------------------------------------
+def safe_rerun():
+    try:
+        st.experimental_rerun()
+    except AttributeError:
+        # If experimental_rerun is not available, do nothing.
+        pass
+
 # =============================================================================
 # SETUP SESSION STATE
 # =============================================================================
@@ -102,7 +112,7 @@ def render_step1():
     if submitted:
         st.session_state.current_scheme = scheme
         st.session_state.step = 2
-        st.experimental_rerun()
+        safe_rerun()
 
 # =============================================================================
 # STEP 2: Enter Annual Income Details
@@ -119,7 +129,7 @@ def render_step2():
         st.session_state.bonus = bonus
         st.session_state.total_income = ctc + bonus
         st.session_state.step = 3
-        st.experimental_rerun()
+        safe_rerun()
 
 # =============================================================================
 # STEP 3: Enter Basic Salary and (if applicable) HRA Details
@@ -166,12 +176,12 @@ def render_step3():
             st.session_state.hra_received = 0
             st.session_state.monthly_rent = 0
             st.session_state.city_type = ""
-        # Decide next step
+        # Decide next step: if Old Tax Scheme, proceed to deductions; else, go to summary.
         if st.session_state.current_scheme == "Old Tax Scheme":
             st.session_state.step = 4
         else:
             st.session_state.step = 5
-        st.experimental_rerun()
+        safe_rerun()
 
 # =============================================================================
 # STEP 4: Enter Other Deductions (Only for Old Tax Scheme)
@@ -191,7 +201,7 @@ def render_step4():
         st.session_state.home_loan = home_loan
         st.session_state.other_ded = other_ded
         st.session_state.step = 5
-        st.experimental_rerun()
+        safe_rerun()
 
 # =============================================================================
 # STEP 5: Calculate and Show Final Result & Summary
@@ -276,7 +286,7 @@ def render_step5():
     if st.button("Restart"):
         for key in list(st.session_state.keys()):
             del st.session_state[key]
-        st.experimental_rerun()
+        safe_rerun()
 
 # =============================================================================
 # MAIN FLOW: Render the appropriate step based on session state
