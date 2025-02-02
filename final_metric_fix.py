@@ -1,25 +1,44 @@
 import streamlit as st
 
-# =============================================================================
+# ------------------------------------------------------------------------------
 # PAGE CONFIGURATION
-# =============================================================================
-st.set_page_config(page_title="Income Tax Calculator", layout="wide")
+# ------------------------------------------------------------------------------
+st.set_page_config(page_title="Income Tax Comparison Calculator", layout="wide")
 
-# =============================================================================
-# NAVIGATION OPTIONS & SESSION STATE INITIALIZATION
-# =============================================================================
+# ------------------------------------------------------------------------------
+# HEADING & INSTRUCTIONS
+# ------------------------------------------------------------------------------
+st.title("Income Tax Comparison Calculator – (Old Scheme vs New Scheme 2025)")
+st.markdown("""
+**Instructions:**
+- This tool helps you compare your tax liabilities under the Old and New tax schemes for the year 2025.
+- Follow the steps on each page to enter your salary details and the relevant deductions/exemptions.
+- **Note:** None of the data is saved or stored permanently. All inputs are used only for the duration of your session.
+""")
+
+# ------------------------------------------------------------------------------
+# DEFINE NAVIGATION OPTIONS & INITIALIZE CURRENT SECTION
+# ------------------------------------------------------------------------------
 nav_options = ["Salary Details", "Exemptions (Old Scheme)", "Results"]
+
 if "current_section" not in st.session_state:
     st.session_state.current_section = "Salary Details"
 
-# Sidebar manual navigation (updates session state)
-nav = st.sidebar.radio("Select Section", options=nav_options, index=nav_options.index(st.session_state.current_section), key="nav_radio")
+default_index = nav_options.index(st.session_state.current_section)
+
+# Sidebar: Manual Navigation (updates session state)
+nav = st.sidebar.radio(
+    "Select Section",
+    options=nav_options,
+    index=default_index,
+    key="nav_radio"
+)
 if nav != st.session_state.current_section:
     st.session_state.current_section = nav
 
-# =============================================================================
+# ------------------------------------------------------------------------------
 # CUSTOM CSS FOR STYLING
-# =============================================================================
+# ------------------------------------------------------------------------------
 st.markdown("""
 <style>
 .stApp {
@@ -59,9 +78,9 @@ h1, h2, h3, h4, label, p {
 </style>
 """, unsafe_allow_html=True)
 
-# =============================================================================
+# ------------------------------------------------------------------------------
 # TAX SLABS & STANDARD DEDUCTIONS
-# =============================================================================
+# ------------------------------------------------------------------------------
 OLD_TAX_SLABS = [
     (0, 250000, 0),
     (250000, 500000, 5),
@@ -106,7 +125,8 @@ def show_salary_details():
         total_income = annual_ctc + bonus
         st.write(f"**Total Income:** ₹{total_income:,.0f}")
         
-        basic_mode = st.radio("How would you like to enter Basic Salary?", ("Enter Amount", "Percentage of Total Annual CTC"))
+        basic_mode = st.radio("How would you like to enter Basic Salary?",
+                              ("Enter Amount", "Percentage of Total Annual CTC"))
         if basic_mode == "Enter Amount":
             basic_salary = st.number_input("Basic Salary (₹)", min_value=0, value=int(0.3 * total_income), step=1000)
         else:
@@ -114,7 +134,8 @@ def show_salary_details():
             basic_salary = total_income * basic_pct / 100
         st.write(f"**Basic Salary:** ₹{basic_salary:,.0f}")
         
-        hra_mode = st.radio("How would you like to enter HRA Received?", ("Enter Amount (Annual)", "Percentage of Basic Salary"))
+        hra_mode = st.radio("How would you like to enter HRA Received?",
+                            ("Enter Amount (Annual)", "Percentage of Basic Salary"))
         if hra_mode == "Enter Amount (Annual)":
             hra_received = st.number_input("HRA Received (₹, Annual)", min_value=0, value=int(0.5 * basic_salary), step=1000)
         else:
@@ -133,7 +154,6 @@ def show_salary_details():
         st.session_state.salary_saved = True
         st.success("Salary details saved!")
     
-    # Only show Next if details have been saved
     if st.session_state.get("salary_saved", False):
         st.button("Next", on_click=lambda: st.session_state.update({"current_section": "Exemptions (Old Scheme)"}))
     
