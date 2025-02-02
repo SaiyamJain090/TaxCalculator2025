@@ -1,33 +1,25 @@
 import streamlit as st
 
-# ------------------------------------------------------------------------------
+# =============================================================================
 # PAGE CONFIGURATION
-# ------------------------------------------------------------------------------
+# =============================================================================
 st.set_page_config(page_title="Income Tax Calculator", layout="wide")
 
-# ------------------------------------------------------------------------------
-# DEFINE NAVIGATION OPTIONS & INITIALIZE CURRENT SECTION
-# ------------------------------------------------------------------------------
+# =============================================================================
+# NAVIGATION OPTIONS & SESSION STATE INITIALIZATION
+# =============================================================================
 nav_options = ["Salary Details", "Exemptions (Old Scheme)", "Results"]
-
 if "current_section" not in st.session_state:
     st.session_state.current_section = "Salary Details"
 
-default_index = nav_options.index(st.session_state.current_section)
-
-# Sidebar: Manual Navigation (updates session state)
-nav = st.sidebar.radio(
-    "Select Section",
-    options=nav_options,
-    index=default_index,
-    key="nav_radio"
-)
+# Sidebar manual navigation (updates session state)
+nav = st.sidebar.radio("Select Section", options=nav_options, index=nav_options.index(st.session_state.current_section), key="nav_radio")
 if nav != st.session_state.current_section:
     st.session_state.current_section = nav
 
-# ------------------------------------------------------------------------------
+# =============================================================================
 # CUSTOM CSS FOR STYLING
-# ------------------------------------------------------------------------------
+# =============================================================================
 st.markdown("""
 <style>
 .stApp {
@@ -67,9 +59,9 @@ h1, h2, h3, h4, label, p {
 </style>
 """, unsafe_allow_html=True)
 
-# ------------------------------------------------------------------------------
+# =============================================================================
 # TAX SLABS & STANDARD DEDUCTIONS
-# ------------------------------------------------------------------------------
+# =============================================================================
 OLD_TAX_SLABS = [
     (0, 250000, 0),
     (250000, 500000, 5),
@@ -101,21 +93,20 @@ def calculate_tax(income, slabs):
     return tax
 
 # =============================================================================
-# SECTION 1: SALARY DETAILS
+# PAGE FUNCTIONS
 # =============================================================================
-if st.session_state.current_section == "Salary Details":
+
+def show_salary_details():
     st.markdown("<div class='section'>", unsafe_allow_html=True)
     st.header("Section 1: Salary Details")
     st.subheader("Enter your salary details below:")
-    
     with st.form(key="salary_form"):
         annual_ctc = st.number_input("Total Annual CTC (₹)", min_value=0, value=600000, step=10000)
         bonus = st.number_input("Total Bonus (₹)", min_value=0, value=0, step=1000)
         total_income = annual_ctc + bonus
         st.write(f"**Total Income:** ₹{total_income:,.0f}")
         
-        basic_mode = st.radio("How would you like to enter Basic Salary?",
-                              ("Enter Amount", "Percentage of Total Annual CTC"))
+        basic_mode = st.radio("How would you like to enter Basic Salary?", ("Enter Amount", "Percentage of Total Annual CTC"))
         if basic_mode == "Enter Amount":
             basic_salary = st.number_input("Basic Salary (₹)", min_value=0, value=int(0.3 * total_income), step=1000)
         else:
@@ -123,8 +114,7 @@ if st.session_state.current_section == "Salary Details":
             basic_salary = total_income * basic_pct / 100
         st.write(f"**Basic Salary:** ₹{basic_salary:,.0f}")
         
-        hra_mode = st.radio("How would you like to enter HRA Received?",
-                            ("Enter Amount (Annual)", "Percentage of Basic Salary"))
+        hra_mode = st.radio("How would you like to enter HRA Received?", ("Enter Amount (Annual)", "Percentage of Basic Salary"))
         if hra_mode == "Enter Amount (Annual)":
             hra_received = st.number_input("HRA Received (₹, Annual)", min_value=0, value=int(0.5 * basic_salary), step=1000)
         else:
@@ -143,22 +133,16 @@ if st.session_state.current_section == "Salary Details":
         st.session_state.salary_saved = True
         st.success("Salary details saved!")
     
+    # Only show Next if details have been saved
     if st.session_state.get("salary_saved", False):
-        if st.button("Next"):
-            st.session_state.current_section = "Exemptions (Old Scheme)"
-            st.stop()  # Stop the current run; the next run will reflect the updated section.
+        st.button("Next", on_click=lambda: st.session_state.update({"current_section": "Exemptions (Old Scheme)"}))
     
     st.markdown("</div>", unsafe_allow_html=True)
-    st.stop()
 
-# =============================================================================
-# SECTION 2: EXEMPTIONS FOR OLD TAX SCHEME
-# =============================================================================
-if st.session_state.current_section == "Exemptions (Old Scheme)":
+def show_exemptions():
     st.markdown("<div class='section'>", unsafe_allow_html=True)
     st.header("Section 2: Exemptions for Old Tax Scheme")
     st.markdown("*These inputs apply only for the Old Tax Scheme calculation.*")
-    
     with st.form(key="exemptions_form"):
         monthly_rent = st.number_input("Monthly Rent Paid (₹)", min_value=0, value=0, step=500)
         city_type = st.selectbox("City Type", ("Metro", "Non-Metro"))
@@ -167,7 +151,6 @@ if st.session_state.current_section == "Exemptions (Old Scheme)":
         nps = st.number_input("NPS Deduction (₹)", min_value=0, value=0, step=1000)
         vol_pf = st.number_input("Voluntary PF Deduction (₹)", min_value=0, value=0, step=1000)
         other_deductions = st.number_input("Other Deductions (₹)", min_value=0, value=0, step=1000)
-        
         save_exemptions = st.form_submit_button("Save Exemptions")
     
     if save_exemptions:
@@ -182,30 +165,22 @@ if st.session_state.current_section == "Exemptions (Old Scheme)":
         st.success("Exemptions saved!")
     
     if st.session_state.get("exemptions_saved", False):
-        if st.button("Next"):
-            st.session_state.current_section = "Results"
-            st.stop()
+        st.button("Next", on_click=lambda: st.session_state.update({"current_section": "Results"}))
     
     st.markdown("</div>", unsafe_allow_html=True)
-    st.stop()
 
-# =============================================================================
-# SECTION 3: RESULTS – TAX CALCULATION & SCHEME COMPARISON
-# =============================================================================
-if st.session_state.current_section == "Results":
+def show_results():
     st.markdown("<div class='section'>", unsafe_allow_html=True)
     st.header("Section 3: Tax Calculation and Scheme Comparison")
     
-    # Ensure that Salary Details have been saved.
     if "total_income" not in st.session_state or "basic_salary" not in st.session_state:
         st.warning("Please fill in the Salary Details first!")
-        st.stop()
-        
+        return
+    
     total_income = st.session_state["total_income"]
     basic_salary = st.session_state["basic_salary"]
     hra_received = st.session_state["hra_received"]
     
-    # --- OLD TAX SCHEME CALCULATION ---
     monthly_rent = st.session_state.get("monthly_rent", 0)
     city_type = st.session_state.get("city_type", "Metro")
     annual_rent = monthly_rent * 12
@@ -224,7 +199,6 @@ if st.session_state.current_section == "Results":
     taxable_income_old = max(total_income - total_deductions_old, 0)
     old_tax = calculate_tax(taxable_income_old, OLD_TAX_SLABS)
     
-    # --- NEW TAX SCHEME CALCULATION ---
     if total_income < 1275000:
         new_tax = 0
         taxable_income_new = total_income
@@ -257,3 +231,13 @@ if st.session_state.current_section == "Results":
     </div>
     """, unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
+
+# =============================================================================
+# MAIN EXECUTION: DISPLAY THE CURRENT SECTION
+# =============================================================================
+if st.session_state.current_section == "Salary Details":
+    show_salary_details()
+elif st.session_state.current_section == "Exemptions (Old Scheme)":
+    show_exemptions()
+elif st.session_state.current_section == "Results":
+    show_results()
