@@ -6,27 +6,16 @@ import streamlit as st
 st.set_page_config(page_title="Income Tax Calculator", layout="wide")
 
 # ------------------------------------------------------------------------------
-# INITIALIZE CURRENT SECTION FROM QUERY PARAMETERS
+# DEFINE NAVIGATION OPTIONS & INITIALIZE CURRENT SECTION (using session state)
 # ------------------------------------------------------------------------------
 nav_options = ["Salary Details", "Exemptions (Old Scheme)", "Results"]
 
-# Read the current section from the URL query parameters.
-params = st.query_params
-if "section" in params and params["section"]:
-    current_section = params["section"][0]
-else:
-    current_section = "Salary Details"
-
-# Ensure the section is valid.
-if current_section not in nav_options:
-    current_section = "Salary Details"
-st.session_state.current_section = current_section
+if "current_section" not in st.session_state:
+    st.session_state.current_section = "Salary Details"
 
 default_index = nav_options.index(st.session_state.current_section)
 
-# ------------------------------------------------------------------------------
-# SIDEBAR NAVIGATION
-# ------------------------------------------------------------------------------
+# Sidebar: Manual Navigation (updates session state)
 nav = st.sidebar.radio(
     "Select Section",
     options=nav_options,
@@ -35,7 +24,6 @@ nav = st.sidebar.radio(
 )
 if nav != st.session_state.current_section:
     st.session_state.current_section = nav
-    st.set_query_params(section=nav)
 
 # ------------------------------------------------------------------------------
 # CUSTOM CSS FOR STYLING
@@ -112,9 +100,9 @@ def calculate_tax(income, slabs):
             break
     return tax
 
-# ------------------------------------------------------------------------------
+# =============================================================================
 # SECTION 1: SALARY DETAILS
-# ------------------------------------------------------------------------------
+# =============================================================================
 if st.session_state.current_section == "Salary Details":
     st.markdown("<div class='section'>", unsafe_allow_html=True)
     st.header("Section 1: Salary Details")
@@ -158,15 +146,14 @@ if st.session_state.current_section == "Salary Details":
     if st.session_state.get("salary_saved", False):
         if st.button("Next"):
             st.session_state.current_section = "Exemptions (Old Scheme)"
-            st.set_query_params(section="Exemptions (Old Scheme)")
             st.experimental_rerun()
     
     st.markdown("</div>", unsafe_allow_html=True)
     st.stop()
 
-# ------------------------------------------------------------------------------
+# =============================================================================
 # SECTION 2: EXEMPTIONS FOR OLD TAX SCHEME
-# ------------------------------------------------------------------------------
+# =============================================================================
 if st.session_state.current_section == "Exemptions (Old Scheme)":
     st.markdown("<div class='section'>", unsafe_allow_html=True)
     st.header("Section 2: Exemptions for Old Tax Scheme")
@@ -197,15 +184,14 @@ if st.session_state.current_section == "Exemptions (Old Scheme)":
     if st.session_state.get("exemptions_saved", False):
         if st.button("Next"):
             st.session_state.current_section = "Results"
-            st.set_query_params(section="Results")
             st.experimental_rerun()
     
     st.markdown("</div>", unsafe_allow_html=True)
     st.stop()
 
-# ------------------------------------------------------------------------------
+# =============================================================================
 # SECTION 3: RESULTS – TAX CALCULATION & SCHEME COMPARISON
-# ------------------------------------------------------------------------------
+# =============================================================================
 if st.session_state.current_section == "Results":
     st.markdown("<div class='section'>", unsafe_allow_html=True)
     st.header("Section 3: Tax Calculation and Scheme Comparison")
@@ -218,6 +204,7 @@ if st.session_state.current_section == "Results":
     basic_salary = st.session_state["basic_salary"]
     hra_received = st.session_state["hra_received"]
     
+    # --- OLD TAX SCHEME CALCULATION ---
     monthly_rent = st.session_state.get("monthly_rent", 0)
     city_type = st.session_state.get("city_type", "Metro")
     annual_rent = monthly_rent * 12
@@ -236,6 +223,7 @@ if st.session_state.current_section == "Results":
     taxable_income_old = max(total_income - total_deductions_old, 0)
     old_tax = calculate_tax(taxable_income_old, OLD_TAX_SLABS)
     
+    # --- NEW TAX SCHEME CALCULATION ---
     if total_income < 1275000:
         new_tax = 0
         taxable_income_new = total_income
