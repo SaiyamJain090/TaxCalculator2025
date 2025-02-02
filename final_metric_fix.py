@@ -1,19 +1,20 @@
 import streamlit as st
 
-# ------------------------------------------------------------------------------
+# =============================================================================
 # USE QUERY PARAMETERS TO DRIVE THE CURRENT SECTION
-# ------------------------------------------------------------------------------
+# =============================================================================
+# Use the query parameter "section" if available.
 params = st.experimental_get_query_params()
 if "section" in params:
-    # Use the query parameter if available.
     st.session_state.current_section = params["section"][0]
 elif "current_section" not in st.session_state:
     st.session_state.current_section = "Salary Details"
 
+# Define navigation options.
 nav_options = ["Salary Details", "Exemptions (Old Scheme)", "Results"]
 default_index = nav_options.index(st.session_state.current_section)
 
-# The sidebar radio allows manual navigation; it will update the query parameter.
+# Sidebar radio for manual navigation.
 nav = st.sidebar.radio(
     "Select Section", 
     options=nav_options,
@@ -22,11 +23,11 @@ nav = st.sidebar.radio(
 )
 if nav != st.session_state.current_section:
     st.session_state.current_section = nav
-    st.experimental_set_query_params(section=nav)
+    st.query_params(section=nav)  # Use st.query_params to update query parameters.
 
-# ------------------------------------------------------------------------------
+# =============================================================================
 # CUSTOM CSS: Black background, white text, styled sections, and result card
-# ------------------------------------------------------------------------------
+# =============================================================================
 st.markdown("""
     <style>
     .stApp {
@@ -66,9 +67,9 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# ------------------------------------------------------------------------------
+# =============================================================================
 # TAX SLABS & STANDARD DEDUCTIONS
-# ------------------------------------------------------------------------------
+# =============================================================================
 OLD_TAX_SLABS = [
     (0, 250000, 0),
     (250000, 500000, 5),
@@ -99,9 +100,9 @@ def calculate_tax(income, slabs):
             break
     return tax
 
-# ------------------------------------------------------------------------------
+# =============================================================================
 # SECTION 1: SALARY DETAILS
-# ------------------------------------------------------------------------------
+# =============================================================================
 if st.session_state.current_section == "Salary Details":
     st.markdown("<div class='section'>", unsafe_allow_html=True)
     st.header("Section 1: Salary Details")
@@ -131,23 +132,29 @@ if st.session_state.current_section == "Salary Details":
             hra_received = basic_salary * hra_pct / 100
         st.write(f"**HRA Received (Annual):** ₹{hra_received:,.0f}")
         
-        submitted_salary = st.form_submit_button("Save Salary Details")
-        if submitted_salary:
-            st.session_state["annual_ctc"] = annual_ctc
-            st.session_state["bonus"] = bonus
-            st.session_state["total_income"] = total_income
-            st.session_state["basic_salary"] = basic_salary
-            st.session_state["hra_received"] = hra_received
-            st.success("Salary details saved!")
-            # Advance automatically to the next section.
-            st.experimental_set_query_params(section="Exemptions (Old Scheme)")
+        save_salary = st.form_submit_button("Save Salary Details")
+    
+    if save_salary:
+        st.session_state["annual_ctc"] = annual_ctc
+        st.session_state["bonus"] = bonus
+        st.session_state["total_income"] = total_income
+        st.session_state["basic_salary"] = basic_salary
+        st.session_state["hra_received"] = hra_received
+        st.session_state.salary_saved = True
+        st.success("Salary details saved!")
+    
+    if st.session_state.get("salary_saved", False):
+        if st.button("Next"):
+            st.session_state.current_section = "Exemptions (Old Scheme)"
+            st.query_params(section="Exemptions (Old Scheme)")
             st.experimental_rerun()
+    
     st.markdown("</div>", unsafe_allow_html=True)
-    st.stop()  # Display only one section at a time.
+    st.stop()
 
-# ------------------------------------------------------------------------------
+# =============================================================================
 # SECTION 2: EXEMPTIONS FOR OLD TAX SCHEME
-# ------------------------------------------------------------------------------
+# =============================================================================
 if st.session_state.current_section == "Exemptions (Old Scheme)":
     st.markdown("<div class='section'>", unsafe_allow_html=True)
     st.header("Section 2: Exemptions for Old Tax Scheme")
@@ -162,25 +169,31 @@ if st.session_state.current_section == "Exemptions (Old Scheme)":
         vol_pf = st.number_input("Voluntary PF Deduction (₹)", min_value=0, value=0, step=1000)
         other_deductions = st.number_input("Other Deductions (₹)", min_value=0, value=0, step=1000)
         
-        submitted_exemptions = st.form_submit_button("Save Exemptions")
-        if submitted_exemptions:
-            st.session_state["monthly_rent"] = monthly_rent
-            st.session_state["city_type"] = city_type
-            st.session_state["sec80c"] = sec80c
-            st.session_state["home_loan"] = home_loan
-            st.session_state["nps"] = nps
-            st.session_state["vol_pf"] = vol_pf
-            st.session_state["other_deductions"] = other_deductions
-            st.success("Exemptions saved!")
-            # Advance automatically to the Results section.
-            st.experimental_set_query_params(section="Results")
+        save_exemptions = st.form_submit_button("Save Exemptions")
+    
+    if save_exemptions:
+        st.session_state["monthly_rent"] = monthly_rent
+        st.session_state["city_type"] = city_type
+        st.session_state["sec80c"] = sec80c
+        st.session_state["home_loan"] = home_loan
+        st.session_state["nps"] = nps
+        st.session_state["vol_pf"] = vol_pf
+        st.session_state["other_deductions"] = other_deductions
+        st.session_state.exemptions_saved = True
+        st.success("Exemptions saved!")
+    
+    if st.session_state.get("exemptions_saved", False):
+        if st.button("Next"):
+            st.session_state.current_section = "Results"
+            st.query_params(section="Results")
             st.experimental_rerun()
+    
     st.markdown("</div>", unsafe_allow_html=True)
     st.stop()
 
-# ------------------------------------------------------------------------------
+# =============================================================================
 # SECTION 3: RESULTS – TAX CALCULATION & SCHEME COMPARISON
-# ------------------------------------------------------------------------------
+# =============================================================================
 if st.session_state.current_section == "Results":
     st.markdown("<div class='section'>", unsafe_allow_html=True)
     st.header("Section 3: Tax Calculation and Scheme Comparison")
@@ -224,27 +237,4 @@ if st.session_state.current_section == "Results":
     
     # --- DISPLAY RESULTS WITH HIGHLIGHTING ---
     st.subheader("Your Tax Calculation Summary")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown("#### Old Tax Scheme")
-        st.write(f"**Taxable Income:** ₹{taxable_income_old:,.0f}")
-        st.write(f"**Tax Liability:** ₹{old_tax:,.0f}")
-    with col2:
-        st.markdown("#### New Tax Scheme")
-        st.write(f"**Taxable Income:** ₹{taxable_income_new:,.0f}")
-        st.write(f"**Tax Liability:** ₹{new_tax:,.0f}")
-    
-    if old_tax < new_tax:
-        better = "Old Tax Scheme"
-    elif new_tax < old_tax:
-        better = "New Tax Scheme"
-    else:
-        better = "Both schemes yield the same tax liability"
-    
-    st.markdown(f"""
-    <div class="result-card">
-      <h2>Better Scheme: {better}</h2>
-      <p>Based on your inputs, the <strong>{better}</strong> offers a lower tax liability.</p>
-    </div>
-    """, unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+    col1,
