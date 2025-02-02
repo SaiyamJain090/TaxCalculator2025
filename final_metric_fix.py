@@ -3,27 +3,26 @@ import streamlit as st
 # =============================================================================
 # USE QUERY PARAMETERS TO DRIVE THE CURRENT SECTION
 # =============================================================================
-# Use the query parameter "section" if available.
-params = st.experimental_get_query_params()
+# Read query parameters using the new API.
+params = st.query_params
 if "section" in params:
     st.session_state.current_section = params["section"][0]
 elif "current_section" not in st.session_state:
     st.session_state.current_section = "Salary Details"
 
-# Define navigation options.
 nav_options = ["Salary Details", "Exemptions (Old Scheme)", "Results"]
 default_index = nav_options.index(st.session_state.current_section)
 
 # Sidebar radio for manual navigation.
 nav = st.sidebar.radio(
-    "Select Section", 
+    "Select Section",
     options=nav_options,
     index=default_index,
     key="nav_radio"
 )
 if nav != st.session_state.current_section:
     st.session_state.current_section = nav
-    st.query_params(section=nav)  # Use st.query_params to update query parameters.
+    st.set_query_params(section=nav)
 
 # =============================================================================
 # CUSTOM CSS: Black background, white text, styled sections, and result card
@@ -146,7 +145,7 @@ if st.session_state.current_section == "Salary Details":
     if st.session_state.get("salary_saved", False):
         if st.button("Next"):
             st.session_state.current_section = "Exemptions (Old Scheme)"
-            st.query_params(section="Exemptions (Old Scheme)")
+            st.set_query_params(section="Exemptions (Old Scheme)")
             st.experimental_rerun()
     
     st.markdown("</div>", unsafe_allow_html=True)
@@ -185,7 +184,7 @@ if st.session_state.current_section == "Exemptions (Old Scheme)":
     if st.session_state.get("exemptions_saved", False):
         if st.button("Next"):
             st.session_state.current_section = "Results"
-            st.query_params(section="Results")
+            st.set_query_params(section="Results")
             st.experimental_rerun()
     
     st.markdown("</div>", unsafe_allow_html=True)
