@@ -11,9 +11,10 @@ st.set_page_config(page_title="Income Tax Comparison Calculator", layout="wide")
 st.title("Income Tax Comparison Calculator – (Old Scheme vs New Scheme 2025)")
 st.markdown("""
 **Instructions:**
-- This tool helps you compare your tax liabilities under the Old and New tax schemes for the year 2025.
+- This tool helps you compare your tax liabilities under the Old and New tax schemes for the FY26
 - Follow the steps on each page to enter your salary details and the relevant deductions/exemptions.
 - **Note:** None of the data is saved or stored permanently. All inputs are used only for the duration of your session.
+Prepared by - Saiyam Jain
 """)
 
 # ------------------------------------------------------------------------------
