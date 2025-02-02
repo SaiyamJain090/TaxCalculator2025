@@ -1,33 +1,28 @@
 import streamlit as st
 
 # ------------------------------------------------------------------------------
-# HELPER FUNCTION FOR SAFE RERUN
+# USE QUERY PARAMETERS TO DRIVE THE CURRENT SECTION
 # ------------------------------------------------------------------------------
-def safe_rerun():
-    try:
-        st.experimental_rerun()
-    except Exception:
-        pass
-
-# ------------------------------------------------------------------------------
-# INITIAL SETUP & SIDEBAR NAVIGATION CONTROL
-# ------------------------------------------------------------------------------
-if "current_section" not in st.session_state:
+params = st.experimental_get_query_params()
+if "section" in params:
+    # Use the query parameter if available.
+    st.session_state.current_section = params["section"][0]
+elif "current_section" not in st.session_state:
     st.session_state.current_section = "Salary Details"
 
 nav_options = ["Salary Details", "Exemptions (Old Scheme)", "Results"]
 default_index = nav_options.index(st.session_state.current_section)
 
-# The sidebar radio is used for manual navigation.
+# The sidebar radio allows manual navigation; it will update the query parameter.
 nav = st.sidebar.radio(
     "Select Section", 
     options=nav_options,
     index=default_index,
     key="nav_radio"
 )
-# Update our control variable if the user manually changes it.
 if nav != st.session_state.current_section:
     st.session_state.current_section = nav
+    st.experimental_set_query_params(section=nav)
 
 # ------------------------------------------------------------------------------
 # CUSTOM CSS: Black background, white text, styled sections, and result card
@@ -145,10 +140,10 @@ if st.session_state.current_section == "Salary Details":
             st.session_state["hra_received"] = hra_received
             st.success("Salary details saved!")
             # Advance automatically to the next section.
-            st.session_state.current_section = "Exemptions (Old Scheme)"
-            safe_rerun()
+            st.experimental_set_query_params(section="Exemptions (Old Scheme)")
+            st.experimental_rerun()
     st.markdown("</div>", unsafe_allow_html=True)
-    st.stop()  # Ensure only one section is displayed at a time.
+    st.stop()  # Display only one section at a time.
 
 # ------------------------------------------------------------------------------
 # SECTION 2: EXEMPTIONS FOR OLD TAX SCHEME
@@ -178,8 +173,8 @@ if st.session_state.current_section == "Exemptions (Old Scheme)":
             st.session_state["other_deductions"] = other_deductions
             st.success("Exemptions saved!")
             # Advance automatically to the Results section.
-            st.session_state.current_section = "Results"
-            safe_rerun()
+            st.experimental_set_query_params(section="Results")
+            st.experimental_rerun()
     st.markdown("</div>", unsafe_allow_html=True)
     st.stop()
 
