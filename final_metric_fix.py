@@ -14,7 +14,7 @@ st.markdown("""
 - This tool helps you compare your tax liabilities under the Old and New tax schemes for the FY26
 - Follow the steps on each page to enter your salary details and the relevant deductions/exemptions.
 - **Note:** None of the data is saved or stored permanently. All inputs are used only for the duration of your session.
-- /Prepared by - Saiyam Jain (Please reach out for any feedback)/
+- *Prepared by - Saiyam Jain (Please reach out for any feedback)*
 """)
 
 # ------------------------------------------------------------------------------
