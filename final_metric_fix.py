@@ -1,8 +1,7 @@
-
 import streamlit as st
 import pandas as pd
 
-# CSS to fix metric text visibility and button contrast
+# CSS Styling
 st.markdown(
     '''
     <style>
@@ -50,7 +49,7 @@ st.markdown(
     }
     /* Fix metric text visibility (fully black) */
     div[data-testid="stMetricValue"] {
-        color: #000000 !important;  /* Force black color */
+        color: #000000 !important;
         font-weight: bold !important;
         font-size: 1.5em !important;
     }
@@ -63,12 +62,24 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# Tax Slabs and Deductions
-OLD_TAX_SLABS = [(0, 250000, 0), (250000, 500000, 5), (500000, 1000000, 20), (1000000, float('inf'), 30)]
+# Tax Slabs and Standard Deductions
+OLD_TAX_SLABS = [
+    (0, 250000, 0),
+    (250000, 500000, 5),
+    (500000, 1000000, 20),
+    (1000000, float('inf'), 30)
+]
 STANDARD_DEDUCTION_OLD = 50000
 
-NEW_TAX_SLABS = [(0, 400000, 0), (400000, 800000, 5), (800000, 1200000, 10),
-                 (1200000, 1600000, 15), (1600000, 2000000, 20), (2000000, 2400000, 25), (2400000, float('inf'), 30)]
+NEW_TAX_SLABS = [
+    (0, 400000, 0),
+    (400000, 800000, 5),
+    (800000, 1200000, 10),
+    (1200000, 1600000, 15),
+    (1600000, 2000000, 20),
+    (2000000, 2400000, 25),
+    (2400000, float('inf'), 30)
+]
 STANDARD_DEDUCTION_NEW = 75000
 
 # Tax Calculation Function
@@ -84,14 +95,13 @@ def calculate_tax(income, slabs):
 
 # App Header
 st.markdown('<p class="header">Income Tax Comparison Calculator</p>', unsafe_allow_html=True)
-st.write("This tool helps you compare tax liabilities under the **Old vs. New Tax Regime**.")
+st.write("This tool helps you compare your tax liabilities based on the scheme you're currently using versus the alternative.")
 
-# Scheme Selection
+# 1. Ask the user which scheme they are currently using
 current_scheme = st.radio("Which tax scheme are you currently using?", ("Old Tax Scheme", "New Tax Scheme"))
 
+# 2. Input Form (revamped to show extra deduction fields only if Old Tax Scheme is selected)
 st.markdown('<div class="section">', unsafe_allow_html=True)
-
-# Input Form
 with st.form("tax_form"):
     st.subheader("Income Details")
     col1, col2 = st.columns(2)
@@ -100,7 +110,7 @@ with st.form("tax_form"):
     with col2:
         bonus = st.number_input("Bonus (₹)", min_value=0, value=0, step=5000)
     total_income = ctc + bonus
-
+    
     st.write("### Basic Salary Details")
     basic_mode = st.radio("Provide Basic Salary as:", ["Percentage", "Amount"], index=0)
     if basic_mode == "Percentage":
@@ -108,7 +118,7 @@ with st.form("tax_form"):
         basic_salary = (basic_pct / 100) * total_income
     else:
         basic_salary = st.number_input("Basic Salary (₹)", min_value=10000, value=int(0.3 * total_income), step=1000)
-
+    
     st.write("### HRA Details")
     hra_mode = st.radio("Provide HRA as:", ["Percentage of Basic", "Fixed Amount"], index=0)
     if hra_mode == "Percentage of Basic":
@@ -116,20 +126,29 @@ with st.form("tax_form"):
         hra_received = (hra_pct / 100) * basic_salary
     else:
         hra_received = st.number_input("HRA Received (₹)", min_value=0, value=int(0.5 * basic_salary), step=1000)
-
+    
     rent_paid = st.number_input("Rent Paid (₹)", min_value=0, value=0, step=1000)
     city_type = st.selectbox("City Type", ["Metro", "Non-Metro"])
-
-    st.write("### Other Deductions (Only applicable for Old Tax Scheme)")
-    sec80c = st.number_input("Section 80C Deduction (₹, max 1.5L)", min_value=0, max_value=150000, value=150000, step=10000)
-    sec80d = st.number_input("Section 80D (Insurance) Deduction (₹)", min_value=0, max_value=100000, value=50000, step=5000)
-    home_loan = st.number_input("Home Loan Interest Deduction (₹, max 2L)", min_value=0, max_value=200000, value=0, step=5000)
-    other_ded = st.number_input("Other Deductions (₹)", min_value=0, value=0, step=5000)
+    
+    # Only show additional deductions if the current scheme is Old Tax Scheme
+    if current_scheme == "Old Tax Scheme":
+        st.write("### Other Deductions (Applicable for Old Tax Scheme)")
+        sec80c = st.number_input("Section 80C Deduction (₹, max 1.5L)", min_value=0, max_value=150000, value=150000, step=10000)
+        sec80d = st.number_input("Section 80D (Insurance) Deduction (₹)", min_value=0, max_value=100000, value=50000, step=5000)
+        home_loan = st.number_input("Home Loan Interest Deduction (₹, max 2L)", min_value=0, max_value=200000, value=0, step=5000)
+        other_ded = st.number_input("Other Deductions (₹)", min_value=0, value=0, step=5000)
+    else:
+        st.info("Additional deductions are not applicable under the New Tax Scheme.")
+        # For a valid alternative calculation, set these values to zero
+        sec80c = 0
+        sec80d = 0
+        home_loan = 0
+        other_ded = 0
 
     submitted = st.form_submit_button("Calculate Tax")
-
 st.markdown('</div>', unsafe_allow_html=True)
 
+# 3. Calculation Logic and Display Results
 if submitted:
     st.markdown('<div class="section">', unsafe_allow_html=True)
     st.subheader("Calculation Results")
@@ -138,25 +157,39 @@ if submitted:
     excess_rent = max(rent_paid - (0.1 * basic_salary), 0)
     city_limit = 0.5 * basic_salary if city_type == "Metro" else 0.4 * basic_salary
     hra_exemption = min(hra_received, excess_rent, city_limit)
-
-    # Old Regime Tax Calculation
+    
+    # Calculate for Old Tax Scheme
     total_deductions_old = STANDARD_DEDUCTION_OLD + sec80c + sec80d + home_loan + other_ded + hra_exemption
     taxable_income_old = max(total_income - total_deductions_old, 0)
     tax_old = calculate_tax(taxable_income_old, OLD_TAX_SLABS)
-
-    # New Regime Tax Calculation
+    
+    # Calculate for New Tax Scheme
     taxable_income_new = max(total_income - STANDARD_DEDUCTION_NEW, 0)
     tax_new = calculate_tax(taxable_income_new, NEW_TAX_SLABS)
-
-    # Display Side-by-Side Results
-    col_old, col_new = st.columns(2)
-    with col_old:
-        st.markdown("### Old Tax Scheme")
-        st.metric("Taxable Income", f"₹{taxable_income_old:,.0f}")
-        st.metric("Tax Liability", f"₹{tax_old:,.0f}")
-    with col_new:
-        st.markdown("### New Tax Scheme")
-        st.metric("Taxable Income", f"₹{taxable_income_new:,.0f}")
-        st.metric("Tax Liability", f"₹{tax_new:,.0f}")
-
+    
+    # Set current and alternative scheme calculations based on the user's selection
+    if current_scheme == "Old Tax Scheme":
+        current_taxable = taxable_income_old
+        current_tax = tax_old
+        alt_scheme = "New Tax Scheme"
+        alt_taxable = taxable_income_new
+        alt_tax = tax_new
+    else:
+        current_taxable = taxable_income_new
+        current_tax = tax_new
+        alt_scheme = "Old Tax Scheme"
+        alt_taxable = taxable_income_old
+        alt_tax = tax_old
+    
+    # Display results side by side
+    col_current, col_alt = st.columns(2)
+    with col_current:
+        st.markdown(f"### {current_scheme} (Your Current Scheme)")
+        st.metric("Taxable Income", f"₹{current_taxable:,.0f}")
+        st.metric("Tax Liability", f"₹{current_tax:,.0f}")
+    with col_alt:
+        st.markdown(f"### {alt_scheme} (Alternative Scheme)")
+        st.metric("Taxable Income", f"₹{alt_taxable:,.0f}")
+        st.metric("Tax Liability", f"₹{alt_tax:,.0f}")
     st.markdown('</div>', unsafe_allow_html=True)
+
