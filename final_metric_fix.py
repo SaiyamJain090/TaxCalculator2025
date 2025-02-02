@@ -237,4 +237,27 @@ if st.session_state.current_section == "Results":
     
     # --- DISPLAY RESULTS WITH HIGHLIGHTING ---
     st.subheader("Your Tax Calculation Summary")
-    col1,
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("#### Old Tax Scheme")
+        st.write(f"**Taxable Income:** ₹{taxable_income_old:,.0f}")
+        st.write(f"**Tax Liability:** ₹{old_tax:,.0f}")
+    with col2:
+        st.markdown("#### New Tax Scheme")
+        st.write(f"**Taxable Income:** ₹{taxable_income_new:,.0f}")
+        st.write(f"**Tax Liability:** ₹{new_tax:,.0f}")
+    
+    if old_tax < new_tax:
+        better = "Old Tax Scheme"
+    elif new_tax < old_tax:
+        better = "New Tax Scheme"
+    else:
+        better = "Both schemes yield the same tax liability"
+    
+    st.markdown(f"""
+    <div class="result-card">
+      <h2>Better Scheme: {better}</h2>
+      <p>Based on your inputs, the <strong>{better}</strong> offers a lower tax liability.</p>
+    </div>
+    """, unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
