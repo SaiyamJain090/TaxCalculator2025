@@ -1,18 +1,24 @@
 import streamlit as st
 
 # ------------------------------------------------------------------------------
-# INITIAL SETUP & SIDEBAR NAVIGATION
+# INITIAL SETUP & SIDEBAR NAVIGATION CONTROL
 # ------------------------------------------------------------------------------
-if "nav_section" not in st.session_state:
-    st.session_state.nav_section = "Salary Details"
+if "current_section" not in st.session_state:
+    st.session_state.current_section = "Salary Details"
 
-st.sidebar.title("Navigation")
-# The radio here both displays and allows manual switching.
+nav_options = ["Salary Details", "Exemptions (Old Scheme)", "Results"]
+default_index = nav_options.index(st.session_state.current_section)
+
+# The sidebar radio is used only for manual navigation.
 nav = st.sidebar.radio(
-    "Select Section",
-    options=["Salary Details", "Exemptions (Old Scheme)", "Results"],
-    key="nav_section"
+    "Select Section", 
+    options=nav_options,
+    index=default_index,
+    key="nav_radio"
 )
+# If the user manually selects a different section, update our control variable.
+if nav != st.session_state.current_section:
+    st.session_state.current_section = nav
 
 # ------------------------------------------------------------------------------
 # CUSTOM CSS: Black background, white text, styled sections, and result card
@@ -27,7 +33,7 @@ st.markdown("""
         color: #ffffff;
         font-family: 'Helvetica', sans-serif;
     }
-    h1, h2, h3, h4, label, p, .css-1d391kg {
+    h1, h2, h3, h4, label, p {
         color: #ffffff !important;
     }
     .section {
@@ -92,7 +98,7 @@ def calculate_tax(income, slabs):
 # ------------------------------------------------------------------------------
 # SECTION 1: SALARY DETAILS
 # ------------------------------------------------------------------------------
-if nav == "Salary Details":
+if st.session_state.current_section == "Salary Details":
     st.markdown("<div class='section'>", unsafe_allow_html=True)
     st.header("Section 1: Salary Details")
     st.subheader("Enter your salary details below:")
@@ -129,16 +135,16 @@ if nav == "Salary Details":
             st.session_state["basic_salary"] = basic_salary
             st.session_state["hra_received"] = hra_received
             st.success("Salary details saved!")
-            # Advance automatically to the next section:
-            st.session_state.nav_section = "Exemptions (Old Scheme)"
+            # Advance automatically to the next section.
+            st.session_state.current_section = "Exemptions (Old Scheme)"
             st.experimental_rerun()
     st.markdown("</div>", unsafe_allow_html=True)
-    st.stop()  # Stop so that only one section shows at a time
+    st.stop()  # Show only one section at a time.
 
 # ------------------------------------------------------------------------------
 # SECTION 2: EXEMPTIONS FOR OLD TAX SCHEME
 # ------------------------------------------------------------------------------
-if nav == "Exemptions (Old Scheme)":
+if st.session_state.current_section == "Exemptions (Old Scheme)":
     st.markdown("<div class='section'>", unsafe_allow_html=True)
     st.header("Section 2: Exemptions for Old Tax Scheme")
     st.markdown("*These inputs apply only for the Old Tax Scheme calculation.*")
@@ -162,8 +168,8 @@ if nav == "Exemptions (Old Scheme)":
             st.session_state["vol_pf"] = vol_pf
             st.session_state["other_deductions"] = other_deductions
             st.success("Exemptions saved!")
-            # Automatically advance to the Results section:
-            st.session_state.nav_section = "Results"
+            # Advance automatically to the Results section.
+            st.session_state.current_section = "Results"
             st.experimental_rerun()
     st.markdown("</div>", unsafe_allow_html=True)
     st.stop()
@@ -171,7 +177,7 @@ if nav == "Exemptions (Old Scheme)":
 # ------------------------------------------------------------------------------
 # SECTION 3: RESULTS – TAX CALCULATION & SCHEME COMPARISON
 # ------------------------------------------------------------------------------
-if nav == "Results":
+if st.session_state.current_section == "Results":
     st.markdown("<div class='section'>", unsafe_allow_html=True)
     st.header("Section 3: Tax Calculation and Scheme Comparison")
     
@@ -204,7 +210,7 @@ if nav == "Results":
     old_tax = calculate_tax(taxable_income_old, OLD_TAX_SLABS)
     
     # --- NEW TAX SCHEME CALCULATION ---
-    # If total income is below ₹12.75 LPA then effective tax is 0.
+    # Under the New Scheme, if total income is below ₹12.75 LPA then effective tax is 0.
     if total_income < 1275000:
         new_tax = 0
         taxable_income_new = total_income
@@ -229,13 +235,4 @@ if nav == "Results":
     elif new_tax < old_tax:
         better = "New Tax Scheme"
     else:
-        better = "Both schemes yield the same tax liability"
-    
-    st.markdown(f"""
-    <div class="result-card">
-      <h2>Better Scheme: {better}</h2>
-      <p>Based on your inputs, the <strong>{better}</strong> offers a lower tax liability.</p>
-    </div>
-    """, unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
-
+        b
