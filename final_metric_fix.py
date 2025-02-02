@@ -40,7 +40,7 @@ if 'step' not in st.session_state:
     st.session_state.step = 1
 
 # =============================================================================
-# CUSTOM CSS for Basic Styling
+# CUSTOM CSS for Basic Styling (with adjusted radio label color)
 # =============================================================================
 st.markdown(
     """
@@ -61,6 +61,30 @@ st.markdown(
         box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
         margin-bottom: 20px;
     }
+    /* Ensure all labels, descriptions, and radio buttons are visible in dark blue */
+    div[data-testid="stMarkdownContainer"] p,
+    label,
+    div[role="radiogroup"] label {
+        color: #003366 !important;
+        font-weight: bold !important;
+    }
+    .stButton > button {
+        background-color: #0056b3 !important;
+        color: white !important;
+        font-size: 1em !important;
+        padding: 10px 20px !important;
+        border-radius: 8px !important;
+        border: 2px solid #003366 !important;
+        transition: background-color 0.2s ease-in-out !important;
+    }
+    .stButton > button:hover {
+        background-color: #004080 !important;
+    }
+    div[data-testid="stMetricValue"] {
+        color: #000000 !important;
+        font-weight: bold !important;
+        font-size: 1.5em !important;
+    }
     </style>
     """,
     unsafe_allow_html=True
@@ -75,10 +99,10 @@ def render_step1():
     with st.form("step1_form"):
         scheme = st.radio("Which tax scheme are you currently using?", ("Old Tax Scheme", "New Tax Scheme"))
         submitted = st.form_submit_button("Next")
-        if submitted:
-            st.session_state.current_scheme = scheme
-            st.session_state.step = 2
-            st.experimental_rerun()
+    if submitted:
+        st.session_state.current_scheme = scheme
+        st.session_state.step = 2
+        st.experimental_rerun()
 
 # =============================================================================
 # STEP 2: Enter Annual Income Details
@@ -90,12 +114,12 @@ def render_step2():
         ctc = st.number_input("Annual CTC (₹)", min_value=100000, value=600000, step=50000)
         bonus = st.number_input("Bonus (₹)", min_value=0, value=0, step=5000)
         submitted = st.form_submit_button("Next")
-        if submitted:
-            st.session_state.ctc = ctc
-            st.session_state.bonus = bonus
-            st.session_state.total_income = ctc + bonus
-            st.session_state.step = 3
-            st.experimental_rerun()
+    if submitted:
+        st.session_state.ctc = ctc
+        st.session_state.bonus = bonus
+        st.session_state.total_income = ctc + bonus
+        st.session_state.step = 3
+        st.experimental_rerun()
 
 # =============================================================================
 # STEP 3: Enter Basic Salary and (if applicable) HRA Details
@@ -104,7 +128,7 @@ def render_step3():
     st.markdown('<p class="header">Salary & HRA Details</p>', unsafe_allow_html=True)
     st.write("**Step 3:** Enter your Basic Salary details. (If you are on the Old Tax Scheme, please also provide your HRA details.)")
     with st.form("step3_form"):
-        # Basic Salary
+        # Basic Salary details
         basic_mode = st.radio("Provide Basic Salary as:", ["Percentage", "Amount"], index=0)
         if basic_mode == "Percentage":
             basic_pct = st.number_input("Basic Salary (%)", min_value=10, max_value=50, value=30, step=1)
@@ -113,7 +137,7 @@ def render_step3():
             basic_salary = st.number_input("Basic Salary (₹)", min_value=10000, value=int(0.3 * st.session_state.total_income), step=1000)
         st.session_state.basic_salary = basic_salary
 
-        # HRA details: Only applicable if current scheme is Old
+        # HRA details: Only applicable for Old Tax Scheme
         if st.session_state.current_scheme == "Old Tax Scheme":
             st.write("### HRA Details (Old Tax Scheme)")
             hra_mode = st.radio("Provide HRA Received as:", ["Percentage of Basic", "Fixed Amount"], key="hra_mode")
@@ -121,7 +145,6 @@ def render_step3():
                 hra_pct = st.number_input("HRA (% of Basic Salary)", min_value=0, max_value=100, value=50, step=1, key="hra_pct")
                 hra_received = (hra_pct / 100) * basic_salary
             else:
-                # Ask if the fixed amount is monthly or annual
                 fixed_period = st.radio("Is the HRA amount provided Monthly or Annual?", ["Monthly", "Annual"], key="fixed_period")
                 fixed_amount = st.number_input("HRA Received (₹)", min_value=0, value=int(0.5 * basic_salary), step=1000, key="fixed_amount")
                 if fixed_period == "Monthly":
@@ -130,25 +153,25 @@ def render_step3():
                     hra_received = fixed_amount
             st.session_state.hra_received = hra_received
 
-            # Ask for monthly rent and city type (for computing HRA exemption)
+            # Ask for monthly rent (always monthly) and city type
             monthly_rent = st.number_input("Monthly Rent Paid (₹)", min_value=0, value=0, step=500, key="monthly_rent")
             st.session_state.monthly_rent = monthly_rent
             city_type = st.selectbox("City Type", ["Metro", "Non-Metro"], key="city_type")
             st.session_state.city_type = city_type
 
         submitted = st.form_submit_button("Next")
-        if submitted:
-            # For New scheme, set defaults for HRA-related fields.
-            if st.session_state.current_scheme == "New Tax Scheme":
-                st.session_state.hra_received = 0
-                st.session_state.monthly_rent = 0
-                st.session_state.city_type = ""
-            # Next step: if Old scheme, proceed to deductions; else, skip to summary.
-            if st.session_state.current_scheme == "Old Tax Scheme":
-                st.session_state.step = 4
-            else:
-                st.session_state.step = 5
-            st.experimental_rerun()
+    if submitted:
+        # For New Tax Scheme, set defaults for HRA-related fields.
+        if st.session_state.current_scheme == "New Tax Scheme":
+            st.session_state.hra_received = 0
+            st.session_state.monthly_rent = 0
+            st.session_state.city_type = ""
+        # Decide next step
+        if st.session_state.current_scheme == "Old Tax Scheme":
+            st.session_state.step = 4
+        else:
+            st.session_state.step = 5
+        st.experimental_rerun()
 
 # =============================================================================
 # STEP 4: Enter Other Deductions (Only for Old Tax Scheme)
@@ -162,13 +185,13 @@ def render_step4():
         home_loan = st.number_input("Home Loan Interest Deduction (₹, max 2L)", min_value=0, max_value=200000, value=0, step=5000)
         other_ded = st.number_input("Other Deductions (₹)", min_value=0, value=0, step=5000)
         submitted = st.form_submit_button("Next")
-        if submitted:
-            st.session_state.sec80c = sec80c
-            st.session_state.sec80d = sec80d
-            st.session_state.home_loan = home_loan
-            st.session_state.other_ded = other_ded
-            st.session_state.step = 5
-            st.experimental_rerun()
+    if submitted:
+        st.session_state.sec80c = sec80c
+        st.session_state.sec80d = sec80d
+        st.session_state.home_loan = home_loan
+        st.session_state.other_ded = other_ded
+        st.session_state.step = 5
+        st.experimental_rerun()
 
 # =============================================================================
 # STEP 5: Calculate and Show Final Result & Summary
@@ -187,7 +210,6 @@ def render_step5():
 
     # ---- Old Tax Scheme Calculation ----
     if current_scheme == "Old Tax Scheme":
-        # HRA Exemption Calculation
         hra_received = st.session_state.hra_received
         monthly_rent = st.session_state.monthly_rent
         city_type = st.session_state.city_type
@@ -257,7 +279,7 @@ def render_step5():
         st.experimental_rerun()
 
 # =============================================================================
-# MAIN FLOW: Render the appropriate step
+# MAIN FLOW: Render the appropriate step based on session state
 # =============================================================================
 if st.session_state.step == 1:
     render_step1()
